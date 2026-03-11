@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpStatusCodeException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,7 +18,13 @@ public class AnomalyExplanationService {
 
     @Value("${spring.ai.anthropic.api-key}")
     private String anthropicKey;
+    @Value("${spring.ai.ollama.base-url}")
+    private String ollamaBaseurl;
+    @Value("${spring.ai.openai-sdk.api-key}")
+    private String openAIKey;
     private final RestTemplate restTemplate = new RestTemplate();
+    private static final int MAX_RETRIES = 4;
+    private static final long INITIAL_BACKOFF_MS = 1000;
 
     public String buildPrompt(String anomaly) {
 
@@ -25,8 +32,8 @@ public class AnomalyExplanationService {
                You are a SRE assistant.
                Analyze the following system log anomaly and explain:
                1. What the error means?
-               2. Root cause
-               3. Suggested mitigation to avoid the problem
+               2. Root cause:
+               3. Suggested mitigation to avoid the problem:
                
                Log anomaly:\n %s
                 """.formatted(anomaly) ;
@@ -53,22 +60,134 @@ public class AnomalyExplanationService {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
+//        Map response = restTemplate.postForObject(url, entity, Map.class);
+//
+//        List content = (List) response.get("content");
+//        Map first = (Map) content.get(0);
+//
+//        return first.get("text").toString();
+        int attempt = 0;
+        long backoffMs = INITIAL_BACKOFF_MS;
+
+        while (attempt < MAX_RETRIES) {
+            try {
+                Map response = restTemplate.postForObject(url, entity, Map.class);
+                List content = (List) response.get("content");
+                Map first = (Map) content.get(0);
+                return first.get("text").toString();
+
+            } catch (HttpStatusCodeException e) {
+                int statusCode = e.getStatusCode().value();
+
+                // Retry only on 529 (Overloaded) or 529-equivalent / 503 transient errors
+                if ((statusCode == 529 || statusCode == 503 || statusCode == 529) && attempt < MAX_RETRIES - 1) {
+                    attempt++;
+                    System.out.printf("Anthropic API overloaded (attempt %d/%d). Retrying in %dms...%n",
+                            attempt, MAX_RETRIES, backoffMs);
+                    try {
+                        Thread.sleep(backoffMs);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException("Retry interrupted", ie);
+                    }
+                    backoffMs *= 2; // Exponential backoff
+                } else {
+                    throw new RuntimeException("Anthropic API error [" + statusCode + "]: " + e.getResponseBodyAsString(), e);
+                }
+            }
+        }
+        throw new RuntimeException("Anthropic API is still overloaded after " + MAX_RETRIES + " retries. Please try again later.");
+    }
+
+    public String callOllamaAI(String prompt) {
+
+        String url = ollamaBaseurl + "/api/chat";
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("model", "llama3-chatqa:8b");
+
+        Map<String, String> msg = new HashMap<>();
+        msg.put("role", "user");
+        msg.put("content", prompt);
+
+        request.put("messages", List.of(msg));
+        request.put("stream", false);
+
+        Map<String, Object> options = new HashMap<>();
+        options.put("num_predict", 500);
+        options.put("temperature", 0.2);
+        request.put("options", options);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
+
         Map response = restTemplate.postForObject(url, entity, Map.class);
 
-        List content = (List) response.get("content");
-        Map first = (Map) content.get(0);
+        Map message = (Map) response.get("message");
+        return message.get("content").toString();
+    }
 
-        return first.get("text").toString();
+    public String callOpenAI(String prompt) {
+
+        String url = "https://api.openai.com/v1/chat/completions";
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("model", "gpt-4o-mini");
+        request.put("max_tokens", 500);
+        request.put("temperature", 0.2);
+
+        Map<String, String> msg = new HashMap<>();
+        msg.put("role", "user");
+        msg.put("content", prompt);
+
+        request.put("messages", List.of(msg));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + openAIKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
+
+        Map response = restTemplate.postForObject(url, entity, Map.class);
+
+        List choices = (List) response.get("choices");
+        Map first = (Map) choices.get(0);
+        Map message = (Map) first.get("message");
+        return message.get("content").toString();
 
     }
 
-    public Map<String, Object> explainWithAllModels(String anomaly) {
+    public Map<String, Object> explainWithAnthropicModel(String anomaly) {
 
         String prompt = buildPrompt(anomaly);
         System.out.println(prompt);
         String claudeAiResponse = callAnthropicAI(prompt);
         Map<String, Object> result = new HashMap<>();
         result.put("claude_explanation", claudeAiResponse);
+
+        return result;
+    }
+
+    public Map<String, Object> explainWithOllamaModel(String anomaly) {
+
+        String prompt = buildPrompt(anomaly);
+        System.out.println(prompt);
+        String ollamaAiResponse = callOllamaAI(prompt);
+        Map<String, Object> result = new HashMap<>();
+        result.put("ollama_explanation", ollamaAiResponse);
+
+        return result;
+    }
+
+    public Map<String, Object> explainWithOpenAIModel(String anomaly) {
+
+        String prompt = buildPrompt(anomaly);
+        System.out.println(prompt);
+        String openAiResponse = callOpenAI(prompt);
+        Map<String, Object> result = new HashMap<>();
+        result.put("openai_explanation", openAiResponse);
 
         return result;
     }

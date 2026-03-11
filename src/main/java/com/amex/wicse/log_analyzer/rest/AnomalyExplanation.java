@@ -28,8 +28,8 @@ public class AnomalyExplanation {
         this.anomalyDetectionService = anomalyDetectionService;
     }
 
-    @PostMapping("/{anomalyId}/explain")
-    public ResponseEntity<?> explainAnomaly(@PathVariable("anomalyId") String anomalyId) {
+    @PostMapping("/{anomalyId}/explain/{model}")
+    public ResponseEntity<?> explainAnomaly(@PathVariable("anomalyId") String anomalyId, @PathVariable("model") String model) {
         try {
             Object anomaly = anomalyDetectionService.getAnomalyById(anomalyId);
 //            Optional<ApacheLogAnomaly> optAnomaly = (Optional<ApacheLogAnomaly>) anomaly;
@@ -50,11 +50,27 @@ public class AnomalyExplanation {
                 throw new RuntimeException("Unknown anomaly type: " + logAnomaly.getClass().getName());
             }
 
-            Map<String, Object> llmResponse = anomalyExplanationService.explainWithAllModels(anomalyContent);
             Map<String, Object> response = new HashMap<>();
+            Map<String, Object> llmResponse = new HashMap<>();
             response.put("anomalyId", anomalyId);
             response.put("anomaly", anomaly);
-            response.put("explanation", llmResponse.get("claude_explanation"));
+
+            switch (model.toLowerCase()) {
+                case "anthropic":
+                    llmResponse = anomalyExplanationService.explainWithAnthropicModel(anomalyContent);
+                    response.put("claude_explanation", llmResponse.get("claude_explanation"));
+                    break;
+                case "ollama":
+                    llmResponse = anomalyExplanationService.explainWithOllamaModel(anomalyContent);
+                    response.put("ollama_explanation", llmResponse.get("ollama_explanation"));
+                    break;
+                case "openai":
+                    llmResponse = anomalyExplanationService.explainWithOpenAIModel(anomalyContent);
+                    response.put("openai_explanation", llmResponse.get("openai_explanation"));
+                    break;
+                default:
+                    return ResponseEntity.badRequest().body("Unsupported LLM model: " + model);
+            }
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
