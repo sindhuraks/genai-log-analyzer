@@ -11,6 +11,8 @@ public class ApacheLogAnomaly {
     private Long id;
     @Column(name = "anomaly_id", unique = true, nullable = false)
     private String anomalyId;
+    @Column(name = "time")
+    private String time;
     @Column(name = "level", columnDefinition = "text")
     private String level;
     @Column(name = "content", columnDefinition = "text")
@@ -26,6 +28,13 @@ public class ApacheLogAnomaly {
 
     public String getAnomalyId() {
         return anomalyId;
+    }
+    public String getTime() {
+        return time;
+    }
+
+    public void setTime(String time) {
+        this.time = time;
     }
 
     public void setAnomalyId(String anomalyId) {

@@ -78,6 +78,7 @@ public class AnomalyDetectionService {
     private ApacheLogAnomaly logToAnomaly(ApacheLog log) {
         ApacheLogAnomaly anomaly = new ApacheLogAnomaly();
         anomaly.setAnomalyId(generateAnomalyId("apache", log.getLevel()));
+        anomaly.setTime(log.getTime());
         anomaly.setLevel(log.getLevel());
         anomaly.setContent(log.getContent());
         return anomaly;
@@ -86,6 +87,8 @@ public class AnomalyDetectionService {
     private HDFSLogAnomaly logToHDFSAnomaly(HDFSLog log) {
         HDFSLogAnomaly anomaly = new HDFSLogAnomaly();
         anomaly.setAnomalyId(generateAnomalyId("hdfs", log.getLevel()));
+        anomaly.setDate(log.getDate());
+        anomaly.setTime(log.getTime());
         anomaly.setLevel(log.getLevel());
         anomaly.setContent(log.getContent());
         anomaly.setComponent(log.getComponent());
@@ -95,6 +98,8 @@ public class AnomalyDetectionService {
     private ZookeeperLogAnomaly logToZookeeperAnomaly(ZookeeperLog log) {
         ZookeeperLogAnomaly anomaly = new ZookeeperLogAnomaly();
         anomaly.setAnomalyId(generateAnomalyId("zoo", log.getLevel()));
+        anomaly.setDate(log.getDate());
+        anomaly.setTime(log.getTime());
         anomaly.setLevel(log.getLevel());
         anomaly.setContent(log.getContent());
         anomaly.setComponent(log.getComponent());

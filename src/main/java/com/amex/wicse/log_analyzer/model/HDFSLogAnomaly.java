@@ -13,6 +13,10 @@ public class HDFSLogAnomaly {
     private String anomalyId;
     @Column(name = "level", columnDefinition = "text")
     private String level;
+    @Column(name = "date")
+    private String date;
+    @Column(name = "time")
+    private String time;
     @Column(name = "component", columnDefinition = "text")
     private String component;
     @Column(name = "content", columnDefinition = "text")
@@ -40,6 +44,21 @@ public class HDFSLogAnomaly {
 
     public void setLevel(String level) {
         this.level = level;
+    }
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public String getTime() {
+        return time;
+    }
+
+    public void setTime(String time) {
+        this.time = time;
     }
 
     public String getComponent() {

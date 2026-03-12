@@ -10,6 +10,10 @@ public class ZookeeperLogAnomaly {
     private Long id;
     @Column(name = "anomaly_id", unique = true, nullable = false)
     private String anomalyId;
+    @Column(name = "date")
+    private String date;
+    @Column(name = "time")
+    private String time;
     @Column(name = "level", columnDefinition = "text")
     private String level;
     @Column(name = "node", columnDefinition = "text")
@@ -29,6 +33,22 @@ public class ZookeeperLogAnomaly {
 
     public void setAnomalyId(String anomalyId) {
         this.anomalyId = anomalyId;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public String getTime() {
+        return time;
+    }
+
+    public void setTime(String time) {
+        this.time = time;
     }
 
     public String getLevel() {
