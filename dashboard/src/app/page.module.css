@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Aldrich&display=swap');
+
+.page {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.144);
+  backdrop-filter: blur(16px) saturate(180%);
+}
+
+.main {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  /* max-width: 800px; */
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  /* padding: 120px 60px; */
+}
+
+.horizontalBar {
+  top: 0;
+  width: 100%;
+  height: 90px;
+  display: flex;
+  /* justify-content: space-between; */
+  border-bottom: 1px solid rgba(77, 210, 250, 0.25);
+}
+
+.logoText {
+  font-family: "Aldrich", sans-serif;
+  color: #4dd2fa;
+  font-size: 25px;
+  font-weight: bolder;
+  letter-spacing: 2px;
+  margin: 40px 40px;
+}
+
+.container {
+  display: flex;
+  height: calc(100vh - 90px);
+  position: relative;
+  /* overflow: hidden; */
+  backdrop-filter: blur(10px);
+  gap: 0;
+  overflow: auto; 
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.container::-webkit-scrollbar {
+  display: none;
+}
+
+.leftSection {
+  /* flex: 4; */
+  background: rgba(0, 0, 0, 0.144);
+  color: #eeeeee;
+  /* display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; */
+  border-right: 1px solid rgba(77, 210, 250, 0.25);
+  width: 350px;
+}
+
+.leftSection h3 {
+  font-family: "Aldrich", sans-serif;
+  color: #9fa3a4;
+  font-size: 10px;
+  letter-spacing: 5px;
+  /* padding: 50px; */
+  margin: 20px 28px;
+  /* justify-content: space-between; */
+}
+
+.leftSection div::-webkit-scrollbar {
+  display: none;
+}
+
+.rightSection {
+  /* flex: 6; */
+  background: rgba(0, 0, 0, 0.144);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.searchWrapper {
+  position: relative;
+  margin: 0 25px 10px;
+}
+
+.searchDivider {
+  border-bottom: 1px solid rgba(77, 210, 250, 0.25);
+  margin-top: 20px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: #4a5568;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  background: rgba(77, 210, 250, 0.05);
+  border: 1px solid rgba(77, 210, 250, 0.536);
+  border-radius: 6px;
+  color: #c8d6e0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  padding: 8px 32px 8px 32px;
+  outline: none;
+}
+
+.anomalyDisp {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.anomalyDisp p {
+  font-size: 13px;
+  color: #c8d6e0;
+  font-family: "JetBrains Mono", monospace;
+}

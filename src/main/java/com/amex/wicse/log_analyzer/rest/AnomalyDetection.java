@@ -16,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/anomalies")
+@CrossOrigin(origins = "http://localhost:3000")
 public class AnomalyDetection {
 
     private final AnomalyDetectionService anomalyDetectionService;
@@ -60,6 +61,15 @@ public class AnomalyDetection {
             return ResponseEntity.ok(anomaly);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Failed to get anomaly info: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/list")
+    public ResponseEntity<?> listAllAnomalies() {
+        try {
+            return ResponseEntity.ok(anomalyDetectionService.listAnomalies());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to fetch anomalies: " + e.getMessage());
         }
     }
 }

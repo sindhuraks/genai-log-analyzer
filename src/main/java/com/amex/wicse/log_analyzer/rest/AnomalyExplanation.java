@@ -6,10 +6,7 @@ import com.amex.wicse.log_analyzer.model.ZookeeperLogAnomaly;
 import com.amex.wicse.log_analyzer.service.AnomalyDetectionService;
 import com.amex.wicse.log_analyzer.service.AnomalyExplanationService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.Map;
@@ -18,6 +15,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/anomalies")
+@CrossOrigin(origins = "http://localhost:3000")
 public class AnomalyExplanation {
 
     private AnomalyExplanationService anomalyExplanationService;
@@ -57,15 +55,15 @@ public class AnomalyExplanation {
 
             switch (model.toLowerCase()) {
                 case "anthropic":
-                    llmResponse = anomalyExplanationService.explainWithAnthropicModel(anomalyContent);
+                    llmResponse = anomalyExplanationService.explainWithAnthropicModel(anomalyContent, anomalyId);
                     response.put("claude_explanation", llmResponse.get("claude_explanation"));
                     break;
                 case "ollama":
-                    llmResponse = anomalyExplanationService.explainWithOllamaModel(anomalyContent);
+                    llmResponse = anomalyExplanationService.explainWithOllamaModel(anomalyContent, anomalyId);
                     response.put("ollama_explanation", llmResponse.get("ollama_explanation"));
                     break;
                 case "openai":
-                    llmResponse = anomalyExplanationService.explainWithOpenAIModel(anomalyContent);
+                    llmResponse = anomalyExplanationService.explainWithOpenAIModel(anomalyContent, anomalyId);
                     response.put("openai_explanation", llmResponse.get("openai_explanation"));
                     break;
                 default:

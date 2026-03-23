@@ -128,4 +128,17 @@ public class AnomalyDetectionService {
             throw new RuntimeException("Error getting anomaly: " + e.getMessage());
         }
     }
+
+    public Object listAnomalies() {
+
+        List<ApacheLogAnomaly> apache = apacheAnomalyRepo.listAnomalies();
+        List<HDFSLogAnomaly> hdfs = hdfsAnomalyRepo.listAnomalies();
+        List<ZookeeperLogAnomaly> zoo = zookeeperAnomalyRepo.listAnomalies();
+
+        return java.util.Map.of(
+                "apache", apache,
+                "hdfs", hdfs,
+                "zookeeper", zoo
+        );
+    }
 }

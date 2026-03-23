@@ -1,6 +1,9 @@
 package com.amex.wicse.log_analyzer.service;
 
 import com.amex.wicse.log_analyzer.model.ApacheLogAnomaly;
+import com.amex.wicse.log_analyzer.model.Explanations;
+import com.amex.wicse.log_analyzer.repo.ExplanationsRepo;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -9,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpStatusCodeException;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +29,11 @@ public class AnomalyExplanationService {
     private final RestTemplate restTemplate = new RestTemplate();
     private static final int MAX_RETRIES = 4;
     private static final long INITIAL_BACKOFF_MS = 1000;
+    private final ExplanationsRepo explanationsRepo;
+
+    public AnomalyExplanationService(ExplanationsRepo explanationsRepo) {
+        this.explanationsRepo = explanationsRepo;
+    }
 
     public String buildPrompt(String anomaly) {
 
@@ -36,6 +45,10 @@ public class AnomalyExplanationService {
                3. Suggested mitigation to avoid the problem:
                
                Log anomaly:\n %s
+               
+               After analyzing the anomaly, on a new line output the following:
+               4. Confidence : <number between 0 and 1>
+               5. Uncertainty : <none|low|medium|high>
                 """.formatted(anomaly) ;
     }
 
@@ -159,36 +172,47 @@ public class AnomalyExplanationService {
 
     }
 
-    public Map<String, Object> explainWithAnthropicModel(String anomaly) {
+    public Map<String, Object> explainWithAnthropicModel(String anomaly, String anomalyId) {
 
         String prompt = buildPrompt(anomaly);
         System.out.println(prompt);
         String claudeAiResponse = callAnthropicAI(prompt);
         Map<String, Object> result = new HashMap<>();
         result.put("claude_explanation", claudeAiResponse);
-
+        //anomalyEvaluationService.sendToEvalApi(anomalyId, claudeAiResponse);
+        saveExplanation(anomalyId, "anthropic", claudeAiResponse);
         return result;
     }
 
-    public Map<String, Object> explainWithOllamaModel(String anomaly) {
+    public Map<String, Object> explainWithOllamaModel(String anomaly, String anomalyId) {
 
         String prompt = buildPrompt(anomaly);
         System.out.println(prompt);
         String ollamaAiResponse = callOllamaAI(prompt);
         Map<String, Object> result = new HashMap<>();
         result.put("ollama_explanation", ollamaAiResponse);
-
+        saveExplanation(anomalyId, "ollama", ollamaAiResponse);
         return result;
     }
 
-    public Map<String, Object> explainWithOpenAIModel(String anomaly) {
+    public Map<String, Object> explainWithOpenAIModel(String anomaly, String anomalyId) {
 
         String prompt = buildPrompt(anomaly);
         System.out.println(prompt);
         String openAiResponse = callOpenAI(prompt);
         Map<String, Object> result = new HashMap<>();
         result.put("openai_explanation", openAiResponse);
-
+        saveExplanation(anomalyId, "openai", openAiResponse);
         return result;
+    }
+
+    @Transactional
+    public void saveExplanation(String anomalyId, String model, String response) {
+        Explanations explanation = new Explanations();
+        explanation.setAnomalyId(anomalyId);
+        explanation.setModel(model);
+        explanation.setExplanation(response);
+        explanation.setCreatedAt(LocalDateTime.now());
+        explanationsRepo.save(explanation);
     }
 }
