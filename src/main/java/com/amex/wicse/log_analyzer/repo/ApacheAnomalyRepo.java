@@ -11,16 +11,21 @@ import java.util.Optional;
 @Repository
 public interface ApacheAnomalyRepo extends JpaRepository<ApacheLogAnomaly, Long> {
     Optional<ApacheLogAnomaly> findByAnomalyId(String anomalyId);
+//    @Query(value = """
+//            SELECT a.*
+//                            FROM apache_anomalies a
+//                            WHERE a.id IN (
+//                                SELECT MAX(id)
+//                                FROM apache_anomalies
+//                                GROUP BY level, content
+//                            )
+//                            ORDER BY a.time DESC
+//                            LIMIT 5
+//            """, nativeQuery = true)
     @Query(value = """
-            SELECT a.*
-                            FROM apache_anomalies a
-                            WHERE a.id IN (
-                                SELECT MAX(id)
-                                FROM apache_anomalies
-                                GROUP BY level, content
-                            )
-                            ORDER BY a.time DESC
-                            LIMIT 15
+            SELECT DISTINCT ON (regexp_replace(content, '\\d+', 'N', 'g')) *
+            FROM apache_anomalies 
+            ORDER BY regexp_replace(content, '\\d+', 'N', 'g'), time;
             """, nativeQuery = true)
     List<ApacheLogAnomaly> listAnomalies();
 }

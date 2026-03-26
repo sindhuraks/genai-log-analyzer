@@ -33,6 +33,9 @@ export default function Home() {
             </div>
           </div>
           <div className={styles.rightSection}>
+             <div className={styles.anomalyTopbar}>
+              <h5 className={styles.sectionTxt}>Select an anomaly</h5>
+        </div>
           </div>
         </div>
       </main>

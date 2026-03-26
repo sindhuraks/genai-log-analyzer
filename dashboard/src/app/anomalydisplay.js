@@ -8,11 +8,10 @@ const AnomalyDisplay = () => {
 
     const sortAnomalies = (data) => {
         return data.sort((a, b) => {
-            const getNumber = (id) => parseInt(id.split("_").pop(), 10);
-            return getNumber(a.anomalyId) - getNumber(b.anomalyId);
+            return [...data].sort((a, b) => a.id - b.id);
         });
     };
- 
+
     const fetchAnomalies = async () => {
         try {
 
@@ -61,7 +60,7 @@ const AnomalyDisplay = () => {
                             padding: "8px 10px 4px 0",
                         }}>
                             <p style={{color: "#4dd2fa", fontWeight:"bolder", fontSize: "15px"}}>{anomaly.anomalyId}</p>
-                            <p style={{color: anomaly.level?.toUpperCase() === "ERROR" ? "#E24B4A" : "#f0a500"}}> • {anomaly.level.toUpperCase()}</p> 
+                            <p style={{color: anomaly.level?.toUpperCase() === "ERROR" ? "#E24B4A" : "#f0a500"}}> • {anomaly.level.toUpperCase()}</p>
                         </div>
                         <p style={{fontSize:"11px", fontFamily: "'JetBrains Mono', monospace",
                         }}>{anomaly.content}</p>
