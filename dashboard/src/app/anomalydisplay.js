@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 
-const AnomalyDisplay = () => {
+const AnomalyDisplay = ({ onSelect, selectedId }) => {
 
     const [anomalies, setAnomalies] = useState([]);
 
@@ -52,7 +52,7 @@ const AnomalyDisplay = () => {
         <div>
            {anomalies.length > 0 ? (
                 anomalies.map((anomaly) => (
-                    <div key={anomaly.anomalyId} style={{borderLeft: "2px solid #2bcbfb", paddingLeft: "10px", cursor:"pointer"}}>
+                    <div key={anomaly.anomalyId} onClick={() => onSelect(anomaly.anomalyId)} style={{borderLeft: "2px solid #2bcbfb", paddingLeft: "10px", cursor:"pointer"}}>
                         <div style={{
                             display: "flex",
                             justifyContent: "space-between",

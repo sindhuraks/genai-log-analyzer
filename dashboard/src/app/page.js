@@ -1,8 +1,48 @@
-import Image from "next/image";
+"use client";
+import { useState } from "react";
 import styles from "./page.module.css";
 import AnomalyDisplay from "./anomalydisplay";
 
+const MODELS = ["claude 3 haiku", "gpt 4o mini", "llama3 chatqa"];
+const TABS = ["Explanation", "Eval Metrics"];
+
 export default function Home() {
+
+  const [activeModel, setActiveModel] = useState("claude 3 haiku");
+  const [activeTab, setActiveTab] = useState("Explanation");
+  const [selectedAnomaly, setSelectedAnomaly] = useState(null);
+  const [logError, setLogError] = useState(null);
+  const [anomalyLog, setAnomalyLog] = useState(null);
+  const [loadingLog, setLoadingLog] = useState(false);
+  const [analyzed, setAnalyzed] = useState(false);
+
+  const handleAnomalySelect =  async(anomalyId) => {
+    setSelectedAnomaly(anomalyId);
+    setLoadingLog(true);
+    setLogError(null);
+    setAnomalyLog(null);
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/anomalies/${anomalyId}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+      });
+      if(response.ok) {
+        const data = await response.json();
+        console.log(data);
+        setAnomalyLog(data);
+      } else {
+        throw new Error(`Error ${res.status}`);
+      }
+    } catch (err) {
+      setLogError(err.message);
+    } finally {
+      setLoadingLog(false);
+    }
+  }
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
@@ -29,13 +69,102 @@ export default function Home() {
             </div>
             <div className={styles.searchDivider}></div>
             <div className={styles.anomalyDisp}>
-              <AnomalyDisplay />
+              <AnomalyDisplay onSelect={handleAnomalySelect} selectedId={selectedAnomaly} />
             </div>
           </div>
           <div className={styles.rightSection}>
              <div className={styles.anomalyTopbar}>
-              <h5 className={styles.sectionTxt}>Select an anomaly</h5>
-        </div>
+              <h5 className={styles.sectionTxt}>{selectedAnomaly ? "Selected anomaly : " + selectedAnomaly : "Select an anomaly"}</h5>
+              {/* <p style={{color: anomalyLog?.level?.toUpperCase() === "ERROR" ? "#E24B4A" : "#f0a500"}}> • {anomalyLog.level.toUpperCase()}</p> */}
+              <div className={styles.btnGrp}>
+                <button className={styles.analyzeBtn} onClick={() => setAnalyzed(true)}> 
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  Analyze
+                </button>
+                <button className={styles.evalBtn}> 
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  Run Eval
+                </button> 
+              </div>
+            </div>
+            <div className={styles.anomalyMidbar}>
+                <h5 className={styles.midsectionTxt}>MODEL</h5>
+                <div className={styles.modelBtnGrp}>
+                  {MODELS.map((model) => (
+                    <button
+                      key={model}
+                      className={`${styles.modelBtn} ${activeModel === model ? styles.modelBtnActive : ""}`}
+                      onClick={() => setActiveModel(model)}
+                    >
+                      {model}
+                    </button>
+                ))}
+                </div>
+            </div>
+            <div className={styles.anomalyMidbar2}>
+                  {TABS.map((tab) => (
+                    <h5 
+                    key={tab}
+                    className={`${styles.midsectionTxt2} ${
+                      activeTab === tab ? styles.activeTab : ""
+                    }`}
+                    onClick={() => setActiveTab(tab)}
+                     > 
+                  {tab}
+                  </h5>
+                  ))}
+            </div>
+            <div className={styles.anomalyLogDisp}>
+              <h6 className={styles.logTxt}>ANOMALY LOG</h6>
+              {/* <div className={styles.logPlaceholder}>
+                <p className={styles.logPlaceholderTxt}>Select an anomaly from the sidebar to view log content.</p>
+               </div> */}
+
+              {loadingLog && (
+                <div className={styles.logPlaceholder}>
+                  <p className={styles.logPlaceholderTxt}>
+                    <span className={styles.logLoading}>Fetching log</span>
+                  </p>
+                </div>
+              )}
+
+              {logError && (
+                <div className={styles.logPlaceholder}>
+                  <p className={styles.logErrorTxt}>⚠ {logError}</p>
+                </div>
+              )}
+
+              {!loadingLog && !logError && anomalyLog && (
+                <div className={styles.logPlaceholder}>
+                  <div className={styles.logMeta}>
+                    <p className={styles.logContent}>
+                      [
+                        {anomalyLog.date && anomalyLog.time
+                          ? `${anomalyLog.date} ${anomalyLog.time}`
+                          : anomalyLog.date || anomalyLog.time}
+                      ]{" "}
+                      [{anomalyLog.level?.toLowerCase()}]{" "}
+                      {anomalyLog.content || anomalyLog.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {!loadingLog && !logError && !anomalyLog && (
+                <div className={styles.logPlaceholder}>
+                  <p className={styles.logPlaceholderTxt}>
+                    Select an anomaly from the sidebar to view log content.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {!analyzed && (
+              <div className={styles.analyzePrompt}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(77,210,250,0.25)" strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <p className={styles.analyzePromptTxt}> Select an error or warn message and click <strong>Analyze </strong> to view the explanation here.</p>
+              </div>
+            )}
           </div>
         </div>
       </main>
