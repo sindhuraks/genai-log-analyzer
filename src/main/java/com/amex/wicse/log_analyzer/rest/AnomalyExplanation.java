@@ -1,8 +1,10 @@
 package com.amex.wicse.log_analyzer.rest;
 
 import com.amex.wicse.log_analyzer.model.ApacheLogAnomaly;
+import com.amex.wicse.log_analyzer.model.Explanations;
 import com.amex.wicse.log_analyzer.model.HDFSLogAnomaly;
 import com.amex.wicse.log_analyzer.model.ZookeeperLogAnomaly;
+import com.amex.wicse.log_analyzer.repo.ExplanationsRepo;
 import com.amex.wicse.log_analyzer.service.AnomalyDetectionService;
 import com.amex.wicse.log_analyzer.service.AnomalyExplanationService;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +22,12 @@ public class AnomalyExplanation {
 
     private AnomalyExplanationService anomalyExplanationService;
     private AnomalyDetectionService anomalyDetectionService;
+    private ExplanationsRepo explanationsRepo;
 
-    public AnomalyExplanation(AnomalyExplanationService anomalyExplanationService, AnomalyDetectionService anomalyDetectionService) {
+    public AnomalyExplanation(AnomalyExplanationService anomalyExplanationService, AnomalyDetectionService anomalyDetectionService, ExplanationsRepo explanationsRepo) {
         this.anomalyExplanationService = anomalyExplanationService;
         this.anomalyDetectionService = anomalyDetectionService;
+        this.explanationsRepo = explanationsRepo;
     }
 
     @PostMapping("/{anomalyId}/explain/{model}")
@@ -75,4 +79,23 @@ public class AnomalyExplanation {
             return ResponseEntity.badRequest().body("Failed to get anomaly explanation from LLM: " + e.getMessage());
         }
     }
+
+    @GetMapping("/{anomalyId}/explanation")
+    public ResponseEntity<?> getExplanation(@PathVariable("anomalyId") String anomalyId, @RequestParam("model") String model) {
+        try {
+            Optional<Explanations> existing = explanationsRepo.findByAnomalyIdAndModel(anomalyId, model);
+            if (existing.isPresent()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("anomalyId", anomalyId);
+                response.put("explanation", existing.get().getExplanation());
+                response.put("model", model);
+                response.put("cached", true);
+                return ResponseEntity.ok(response);
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to fetch explanation: " + e.getMessage());
+        }
+    }
+
 }
