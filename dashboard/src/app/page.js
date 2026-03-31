@@ -62,6 +62,8 @@ export default function Home() {
   const [explanationError, setExplanationError] = useState(null);
   const [isCached, setIsCached] = useState(false);
   const [evaluation, setEvaluation] = useState(null);
+  const [loadingEvaluation, setLoadingEvaluation] = useState(false);
+  const [evaluationError, setEvaluationError] = useState(null);
 
   const handleAnomalySelect =  async(anomalyId) => {
     setSelectedAnomaly(anomalyId);
@@ -71,6 +73,8 @@ export default function Home() {
     setLoadingLog(true);
     setLogError(null);
     setAnomalyLog(null);
+    setEvaluation(null);        
+    setEvaluationError(null);
 
     try {
       const response = await fetch(`http://localhost:8080/api/anomalies/${anomalyId}`, {
@@ -143,7 +147,6 @@ export default function Home() {
       setLoadingExplanation(false);
     }
   }
-
   // const formatExplanation = (text) => {
   //   if (!text) return "";
 
@@ -151,7 +154,6 @@ export default function Home() {
   //   const pattern = text.match(/([\s\S]*?Uncertainty:.*?)(\n|$)/);
   //   return pattern ? pattern[0] : text;
   // }
-
   
   const explanationText = useMemo(() => {
     if (!explanation) return "";
@@ -174,6 +176,83 @@ export default function Home() {
     () => parseNumberedSections(explanationText),
     [explanationText]
   );
+
+  const handleEvaluateResponse = async() => {
+    if (!explanationText) return;
+    console.log('Explanation : ' + explanationText);
+
+    const model = MODEL_KEY_MAP[activeModel];
+    console.log('Model : ' + model);
+
+    setLoadingEvaluation(true);
+    setEvaluationError(null);
+    setEvaluation(null);
+
+    try {
+      const llmRes = await fetch(`http://localhost:8080/api/llm/${selectedAnomaly}/${model}/eval`, {
+        method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+      })
+
+      if(llmRes) {
+        const data = await llmRes.json();
+        const text =
+        data.claude_evaluation ||
+        "No evaluationn returned.";
+        setEvaluation(text);
+      } else {
+        throw new Error(`Error ${res.status}`);
+      }
+
+    } catch (err) {
+      setEvaluationError(err.message);
+    } finally {
+      setLoadingEvaluation(false);
+    }
+  }
+
+
+    // const formatExplanation = (text) => {
+  //   if (!text) return "";
+
+  //   // extract sections 1-5 (capture till uncertainty)
+  //   const pattern = text.match(/([\s\S]*?Uncertainty:.*?)(\n|$)/);
+  //   return pattern ? pattern[0] : text;
+  // }
+
+
+  const evalMetrics = (evaluation) => {
+    if (!evaluation) return [];
+
+    let data;
+
+    if (typeof evaluation === "string") {
+      try {
+        const cleaned = evaluation
+          .replace(/```json/g, "")
+          .replace(/```/g, "")
+          .trim();
+
+        data = JSON.parse(cleaned);
+      } catch (err) {
+        console.error("Invalid evaluation JSON:", err);
+        return [];
+      }
+    } else {
+      data = evaluation;
+    }
+
+    return [
+      { label: "Correctness", value: data.correctness },
+      { label: "Completeness", value: data.completeness },
+      { label: "Clarity", value: data.clarity },
+      { label: "Answer Relevance", value: data.answer_relevance },
+      { label: "Reason", value: data.reason },
+    ];
+  }
+  // , [evaluation];
 
 
   return (
@@ -214,7 +293,7 @@ export default function Home() {
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                   {loadingExplanation ? "Analyzing . . ." : "Analyze"}
                 </button>
-                <button className={styles.evalBtn}> 
+                <button className={styles.evalBtn} onClick={handleEvaluateResponse}> 
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
                   Run Eval
                 </button> 
@@ -249,10 +328,10 @@ export default function Home() {
                     onClick={() => {
                       setActiveTab(tab);
 
-                      if (tab === "Eval Metrics") {
-                        setExplanation(null);
-                        setExplanationError(null);
-                      }
+                      // if (tab === "Eval Metrics") {
+                      //   setExplanation(null);
+                      //   setExplanationError(null);
+                      // }
                     }}
                      > 
                   {tab}
@@ -311,7 +390,7 @@ export default function Home() {
                   <p className={styles.analyzePromptTxt}> Select an error or warn message and click <strong>Analyze </strong> to view the explanation here.</p>
                 ) : (
                    <p className={styles.analyzePromptTxt}>
-                    Run evaluation to view model performance metrics for this anomaly.
+                    Click <strong> Run Eval </strong> to view model performance metrics for this anomaly.
                   </p>
                 )}
                   
@@ -324,7 +403,19 @@ export default function Home() {
             </div>
           )}
 
+          {loadingEvaluation && (
+            <div className={styles.analyzePrompt}>
+              <p className={styles.logPlaceholderTxt}>Running LLM-as-a-judge evaluation...</p>
+            </div>
+          )}
+
           {explanationError && (
+            <div className={styles.analyzePrompt}>
+              <p className={styles.logErrorTxt}>⚠ {explanationError}</p>
+            </div>
+          )}
+
+          {evaluationError && (
             <div className={styles.analyzePrompt}>
               <p className={styles.logErrorTxt}>⚠ {explanationError}</p>
             </div>
@@ -340,7 +431,41 @@ export default function Home() {
                 </p>
               </div>
             )} */}
-              {explanation && (
+
+            {activeTab === "Eval Metrics" && evaluation && (
+              <div className={styles.evaluationArea}>
+                 <div className={styles.metricsGrid}>
+                  {evalMetrics(evaluation)
+                    .filter((m) => m.label !== "Reason")
+                    .map((metric, i) => {
+                      const score = Math.round(metric.value * 100);
+
+                      return (
+                        <div key={i} className={styles.metricCard}>
+                          <span className={styles.metricLabel}>
+                            {metric.label}
+                          </span>
+                          <div
+                            className={styles.circularChart}
+                            style={{ "--score": score }}
+                          >
+                            <span className={styles.metricScore}>{(metric.value * 10).toFixed(1)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+                
+                <div className={styles.reasonRow}>
+                  <div className={styles.reasonTitle}>Reason</div>
+                  <p className={styles.reasonText}>
+                    {evalMetrics(evaluation).find(m => m.label === "Reason")?.value}
+                  </p>
+                </div>                    
+              </div>
+            )}
+
+              {activeTab === "Explanation" && explanation && (
                 <div className={styles.explanationArea}>
                   <div className={styles.topRow}>
                     <p className={styles.modelTxt}> {activeModel}</p>
