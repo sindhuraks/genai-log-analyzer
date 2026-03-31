@@ -38,18 +38,25 @@ public class AnomalyExplanationService {
     public String buildPrompt(String anomaly) {
 
         return """
-               You are a SRE assistant.
-               Analyze the following system log anomaly and explain:
-               1. What the error means?
-               2. Root cause:
-               3. Suggested mitigation to avoid the problem:
-               
-               Log anomaly:\n %s
-               
-               After analyzing the anomaly, on a new line output the following:
-               4. Confidence : <number between 0 and 1>
-               5. Uncertainty : <none|low|medium|high>
-                """.formatted(anomaly) ;
+                You are a SRE assistant.
+                Analyze the following system log anomaly and explain:
+                1. What the error means?
+                2. Root cause:
+                3. Suggested mitigation to avoid the problem:
+                               
+                Log anomaly:\n %s
+                               
+                After analyzing the anomaly, on a new line output the following:
+                4. Confidence : <number between 0 and 1>
+                5. Uncertainty : <low|medium|high>
+                               
+                The explanation must be structured and should:
+                - Include the exact numbered headings shown below
+                - Place the explanation directly under each heading
+                - Not include any special characters, symbols, or formatting beyond plain text
+                - Confidence value should be a number between 0 and 1
+                - Uncertainty must be either low, medium or high and should not include any reasoning
+                 """.formatted(anomaly) ;
     }
 
     public String callAnthropicAI(String prompt) {

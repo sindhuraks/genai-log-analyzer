@@ -359,3 +359,163 @@
   color: #e5ebf5;
   text-align: left;
 }
+
+.explanationText {
+  white-space: pre-line;
+  text-align: left;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: #ffffff;
+  margin: 0;
+}
+
+.explanationArea {
+  padding: 20px 28px 32px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+ 
+.explanationArea::-webkit-scrollbar {
+  display: none;
+}
+
+.sectionContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+ 
+.sectionBox {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(77, 210, 250, 0.12);
+  border-left: 3px solid var(--section-color, #4dd2fa);
+  border-radius: 8px;
+  padding: 14px 18px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+ 
+.sectionBox:hover {
+  background: rgba(77, 210, 250, 0.04);
+  border-color: rgba(77, 210, 250, 0.22);
+  border-left-color: var(--section-color, #4dd2fa);
+}
+ 
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+ 
+.sectionNumber {
+  font-family: "Aldrich", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+ 
+.sectionTitle {
+  font-family: "Aldrich", sans-serif;
+  font-size: 13px;
+  letter-spacing: 2px;
+  font-weight: 600;
+}
+ 
+.sectionContent {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: #c8d6e0;
+  line-height: 1.65;
+  margin: 0;
+  white-space: pre-line;
+  text-align: left;
+}
+ 
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border-bottom: 1px solid rgba(77, 210, 250, 0.25);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  font-family: 'Fira Code', 'JetBrains Mono', 'Lucida Console', 'Courier New', monospace;
+}
+
+.modelTxt {
+  text-align: left;
+  width: 100%;
+  display: block;
+  font-weight: bolder;
+  font-size: 13px;
+}
+
+.confWrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+ 
+.confLabel {
+  font-family: "Aldrich", sans-serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #b2bed1;
+}
+ 
+.confBarTrack {
+  width: 80px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+ 
+.confBarFill {
+  height: 100%;
+  background: #00b894;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+ 
+.confPct {
+  font-family: "Aldrich", sans-serif;
+  font-size: 12px;
+  color: #ffffff;
+  min-width: 32px;
+  text-align: right;
+}
+
+.uncPill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: "Aldrich", sans-serif;
+  font-size: 10px;
+  padding: 3px 9px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+ 
+.uncDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rightStats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState , useMemo} from "react";
 import styles from "./page.module.css";
 import AnomalyDisplay from "./anomalydisplay";
 
@@ -10,6 +10,43 @@ const MODEL_KEY_MAP = {
   "gpt 4o mini": "openai",
   "llama3 chatqa": "ollama",
 };
+
+const SECTION_COLORS = ["#ff6b6b", "#a29bfe", "#00b894"];
+function parseNumberedSections(text) {
+    //  if (!text) return [];
+
+    // // Split by numbered headings (1. Heading: ...)
+    // // const sectionRegex = /^(\d+)\.\s+(.+?)\?\s*$/gm;
+    // // const matches = [...text.matchAll(sectionRegex)];
+
+    // return [{ heading: "Explanation", content: text, color: SECTION_COLORS[2] }];
+
+    // // const sections = matches.map((match, i) => {
+    // //   const start = match.index + match[0].length;
+    // //   const end = matches[i + 1]?.index ?? text.length;
+    // //   const content = text.slice(start, end).trim();
+    // //   return {
+    // //     heading: match[2].trim(),
+    // //     content: content || match[3] || "", // include inline if any
+    // //     color: SECTION_COLORS[i] ?? "#4dd2fa",
+    // //   };
+    // // });
+
+    // // return sections;
+     if (!text) return [];
+
+  const sectionRegex = /(\d+)\.\s+([^:\n?]+[:?]?)\s*([\s\S]*?)(?=\n\d+\.|\n*$)/g;
+  const matches = [...text.matchAll(sectionRegex)];
+
+  return matches
+    .map((match, i) => ({
+      number: Number(match[1]),
+      heading: match[2].trim(),
+      content: match[3].trim(),
+      color: SECTION_COLORS[i] ,
+    }))
+    .filter((section) => section.number >= 1 && section.number <= 3);
+}
 
 export default function Home() {
 
@@ -24,9 +61,13 @@ export default function Home() {
   const [loadingExplanation, setLoadingExplanation] = useState(false);
   const [explanationError, setExplanationError] = useState(null);
   const [isCached, setIsCached] = useState(false);
+  const [evaluation, setEvaluation] = useState(null);
 
   const handleAnomalySelect =  async(anomalyId) => {
     setSelectedAnomaly(anomalyId);
+    setExplanation(null);
+    setExplanationError(null);
+    setIsCached(false);
     setLoadingLog(true);
     setLogError(null);
     setAnomalyLog(null);
@@ -103,6 +144,38 @@ export default function Home() {
     }
   }
 
+  // const formatExplanation = (text) => {
+  //   if (!text) return "";
+
+  //   // extract sections 1-5 (capture till uncertainty)
+  //   const pattern = text.match(/([\s\S]*?Uncertainty:.*?)(\n|$)/);
+  //   return pattern ? pattern[0] : text;
+  // }
+
+  
+  const explanationText = useMemo(() => {
+    if (!explanation) return "";
+    return typeof explanation === "string" ? explanation : explanation.explanation || "";
+  }, [explanation]);
+
+  const confidence = useMemo(() => {
+    const match = explanationText.match(/4\.\s+Confidence\s*:\s*([\d.]+)/i);
+    return match ? parseFloat(match[1]) : null;
+}, [explanationText]);
+
+  const uncertainty = useMemo(() => {
+    console.log('Uncertainty : ' + explanationText);
+    const match = explanationText.match(/5\.\s+Uncertainty\s*:\s*([\D.]+)/i);
+    console.log('Uncertainty : ' + match);
+    return match ? match[1] : null;
+}, [explanationText]);
+ 
+  const sections = useMemo(
+    () => parseNumberedSections(explanationText),
+    [explanationText]
+  );
+
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
@@ -158,6 +231,7 @@ export default function Home() {
                       setActiveModel(model);
                       setExplanation(null);
                       setExplanationError(null);
+                      setEvaluation(null);
                     }}
                     >
                       {model}
@@ -172,7 +246,14 @@ export default function Home() {
                     className={`${styles.midsectionTxt2} ${
                       activeTab === tab ? styles.activeTab : ""
                     }`}
-                    onClick={() => setActiveTab(tab)}
+                    onClick={() => {
+                      setActiveTab(tab);
+
+                      if (tab === "Eval Metrics") {
+                        setExplanation(null);
+                        setExplanationError(null);
+                      }
+                    }}
                      > 
                   {tab}
                   </h5>
@@ -214,7 +295,7 @@ export default function Home() {
                 </div>
               )}
 
-              {!loadingLog && !logError && !anomalyLog && (
+              {!loadingLog && !evaluation && !logError && !anomalyLog && (
                 <div className={styles.logPlaceholder}>
                   <p className={styles.logPlaceholderTxt}>
                     Select an anomaly from the sidebar to view log content.
@@ -223,10 +304,17 @@ export default function Home() {
               )}
             </div>
 
-            {!explanation && !loadingExplanation && !explanationError && (
+            {!explanation && !evaluation && !loadingExplanation && !explanationError && (
               <div className={styles.analyzePrompt}>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(77,210,250,0.25)" strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(77,210,250,0.25)" strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                {activeTab == 'Explanation' ? (
                   <p className={styles.analyzePromptTxt}> Select an error or warn message and click <strong>Analyze </strong> to view the explanation here.</p>
+                ) : (
+                   <p className={styles.analyzePromptTxt}>
+                    Run evaluation to view model performance metrics for this anomaly.
+                  </p>
+                )}
+                  
               </div>
             )}
 
@@ -242,15 +330,61 @@ export default function Home() {
             </div>
           )}
 
-            {explanation && (
-              <div className={styles.explanationBox}>
+            {/* {explanation && (
+              <div className={styles.analyzePrompt}>
                 <p className={styles.explanationText}>
-                  {typeof explanation === "string"
+                  {formatExplanation (
+                  typeof explanation === "string"
                     ? explanation
-                    : JSON.stringify(explanation, null, 2)}
+                    : explanation.explanation)}
                 </p>
               </div>
-            )}
+            )} */}
+              {explanation && (
+                <div className={styles.explanationArea}>
+                  <div className={styles.topRow}>
+                    <p className={styles.modelTxt}> {activeModel}</p>
+                     <div className={styles.rightStats}>
+                      {confidence !== null && (
+                          <div className={styles.confWrap}>
+                            <span className={styles.confLabel}>Confidence</span>
+                            <div className={styles.confBarTrack}>
+                              <div
+                                className={styles.confBarFill}
+                                style={{ width: `${Math.round(confidence * 100)}%` }}
+                              />
+                            </div>
+                            <span className={styles.confPct}>{Math.round(confidence * 100)}%</span>
+                          </div>
+                        )}
+                        {uncertainty && (
+                          <div className={styles.confWrap}>
+                            <span className={styles.confLabel}>Uncertainty</span>
+                            <span className={styles.uncPill}>{uncertainty.toLowerCase()}</span>
+                          </div>
+                        )}
+                      </div>  
+                    </div>
+                  {sections.length > 0 ? (
+                    <div className={styles.sectionContainer}>
+                      {sections.map((section, i) => (
+                        <div
+                          key={i}
+                          className={styles.sectionBox}
+                          style={{ "--section-color": section.color }}
+                        >
+                          <div className={styles.sectionHeader}>
+                            <span className={styles.sectionTitle}>{section.heading}</span>
+                          </div>
+                          <p className={styles.sectionContent}>{section.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.explanationText}>{explanationText}</p>
+                  )}
+                </div>
+              )}
           </div>
         </div>
       </main>
