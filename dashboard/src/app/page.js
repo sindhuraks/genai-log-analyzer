@@ -48,6 +48,49 @@ function parseNumberedSections(text) {
     .filter((section) => section.number >= 1 && section.number <= 3);
 }
 
+function formatDateTime(date, time) {
+  try {
+    // Apache: single "Time" field — full natural-language timestamp
+    if (!date && time) {
+      const parsed = new Date(time);
+      if (!isNaN(parsed)) {
+        const yyyy = parsed.getFullYear();
+        const MM   = String(parsed.getMonth() + 1).padStart(2, "0");
+        const dd   = String(parsed.getDate()).padStart(2, "0");
+        const HH   = String(parsed.getHours()).padStart(2, "0");
+        const mm   = String(parsed.getMinutes()).padStart(2, "0");
+        const ss   = String(parsed.getSeconds()).padStart(2, "0");
+        return `${yyyy}-${MM}-${dd} ${HH}:${mm}:${ss}`;
+      }
+      return time; // fallback: return as-is
+    }
+ 
+    // HDFS: date="081109" → "08-11-09" → 2008-11-09, time="203615" → "20:36:15"
+    if (date && /^\d{6}$/.test(date.trim())) {
+      const d = date.trim();
+      const formattedDate = `20${d.slice(0, 2)}-${d.slice(2, 4)}-${d.slice(4, 6)}`;
+      const t = (time || "").trim();
+      const formattedTime = t.length === 6
+        ? `${t.slice(0, 2)}:${t.slice(2, 4)}:${t.slice(4, 6)}`
+        : t;
+      return `${formattedDate} ${formattedTime}`;
+    }
+ 
+    // Zookeeper: date="2015-07-29", time="17:41:44,747" → strip milliseconds
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date.trim())) {
+      const formattedTime = (time || "")
+        .replace(/"/g, "")       // strip any surrounding quotes
+        .replace(/,\d+$/, "")   // drop ",747" milliseconds
+        .trim();
+      return `${date.trim()} ${formattedTime}`;
+    }
+ 
+    return [date, time].filter(Boolean).join(" ");
+  } catch {
+    return [date, time].filter(Boolean).join(" ");
+  }
+}
+
 export default function Home() {
 
   const [activeModel, setActiveModel] = useState("claude 3 haiku");
@@ -64,6 +107,7 @@ export default function Home() {
   const [evaluation, setEvaluation] = useState(null);
   const [loadingEvaluation, setLoadingEvaluation] = useState(false);
   const [evaluationError, setEvaluationError] = useState(null);
+  const [query, setQuery] = useState("");
 
   const handleAnomalySelect =  async(anomalyId) => {
     setSelectedAnomaly(anomalyId);
@@ -253,8 +297,7 @@ export default function Home() {
     ];
   }
   // , [evaluation];
-
-
+  
   return (
     <div className={styles.page}>
       <main className={styles.main}>
@@ -275,13 +318,13 @@ export default function Home() {
                 className={styles.searchInput}
                 type="text"
                 placeholder="Search anomaly ID..."
-                // value={query}
-                // onChange={(e) => setQuery(e.target.value)}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
               />
             </div>
             <div className={styles.searchDivider}></div>
             <div className={styles.anomalyDisp}>
-              <AnomalyDisplay onSelect={handleAnomalySelect} selectedId={selectedAnomaly} />
+              <AnomalyDisplay onSelect={handleAnomalySelect} selectedId={selectedAnomaly} query={query}/>
             </div>
           </div>
           <div className={styles.rightSection}>
@@ -363,9 +406,10 @@ export default function Home() {
                   <div className={styles.logMeta}>
                     <p className={styles.logContent}>
                       [
-                        {anomalyLog.date && anomalyLog.time
+                        {/* {anomalyLog.date && anomalyLog.time
                           ? `${anomalyLog.date} ${anomalyLog.time}`
-                          : anomalyLog.date || anomalyLog.time}
+                          : anomalyLog.date || anomalyLog.time} */}
+                          {formatDateTime(anomalyLog.date, anomalyLog.time)}
                       ]{" "}
                       [{anomalyLog.level?.toLowerCase()}]{" "}
                       {anomalyLog.content || anomalyLog.message}

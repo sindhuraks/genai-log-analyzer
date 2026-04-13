@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 
-const AnomalyDisplay = ({ onSelect, selectedId }) => {
+const AnomalyDisplay = ({ onSelect, selectedId, query }) => {
 
     const [anomalies, setAnomalies] = useState([]);
 
@@ -48,9 +48,15 @@ const AnomalyDisplay = ({ onSelect, selectedId }) => {
         fetchAnomalies();
     }, []);
 
+    const filteredAnomalies = anomalies.filter((anomaly) =>
+        anomaly.anomalyId
+        .toLowerCase()
+        .includes(query.toLowerCase())
+    );
+
     return (
         <div>
-           {anomalies.length > 0 ? (
+           {/* {anomalies.length > 0 ? (
                 anomalies.map((anomaly) => (
                     <div key={anomaly.anomalyId} onClick={() => onSelect(anomaly.anomalyId)} style={{borderLeft: "2px solid #2bcbfb", paddingLeft: "10px", cursor:"pointer"}}>
                         <div style={{
@@ -69,6 +75,51 @@ const AnomalyDisplay = ({ onSelect, selectedId }) => {
                 ))
             ) : (
                 <p>No anomalies found</p>
+            )} */}
+
+            {filteredAnomalies.length > 0 ? (
+                filteredAnomalies.map((anomaly) => (
+                <div
+                    key={anomaly.anomalyId}
+                    onClick={() => onSelect(anomaly.anomalyId)}
+                    style={{
+                    borderLeft: "2px solid #2bcbfb",
+                    paddingLeft: "10px",
+                    cursor: "pointer",
+                    background:
+                        selectedId === anomaly.anomalyId
+                        ? "rgba(77,210,250,0.1)"
+                        : "transparent",
+                    }}
+                >
+                    <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                    }}
+                    >
+                    <p style={{ color: "#4dd2fa", fontWeight: "bold" }}>
+                        {anomaly.anomalyId}
+                    </p>
+
+                    <p
+                        style={{
+                        color:
+                            anomaly.level?.toUpperCase() === "ERROR"
+                            ? "#E24B4A"
+                            : "#f0a500",
+                        }}
+                    >
+                        • {anomaly.level?.toUpperCase()}
+                    </p>
+                    </div>
+
+                    <p style={{ fontSize: "11px" }}>{anomaly.content}</p>
+                    <div className={styles.searchDivider}></div>
+                </div>
+                ))
+            ) : (
+                <p>No matching anomalies</p>
             )}
         </div>
     );
