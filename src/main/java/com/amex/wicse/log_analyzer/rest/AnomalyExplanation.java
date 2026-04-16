@@ -47,7 +47,21 @@ public class AnomalyExplanation {
             } else if (logAnomaly instanceof HDFSLogAnomaly) {
                 anomalyContent = ((HDFSLogAnomaly) logAnomaly).getContent();
             } else if (logAnomaly instanceof ZookeeperLogAnomaly) {
-                anomalyContent = ((ZookeeperLogAnomaly) logAnomaly).getContent();
+                String node = ((ZookeeperLogAnomaly) logAnomaly).getNode();
+                String component = ((ZookeeperLogAnomaly) logAnomaly).getComponent();
+                String content = ((ZookeeperLogAnomaly) logAnomaly).getContent();
+
+                StringBuilder sb = new StringBuilder();
+                if (node != null || component != null) {
+                    sb.append("[");
+                    if (node != null) sb.append(node);
+                    if (node != null && component != null) sb.append(":");
+                    if (component != null) sb.append(component);
+                    sb.append("] - ");
+                }
+                sb.append(content != null ? content : "");
+                anomalyContent = sb.toString();
+
             } else {
                 throw new RuntimeException("Unknown anomaly type: " + logAnomaly.getClass().getName());
             }

@@ -412,7 +412,10 @@ export default function Home() {
                           {formatDateTime(anomalyLog.date, anomalyLog.time)}
                       ]{" "}
                       [{anomalyLog.level?.toLowerCase()}]{" "}
-                      {anomalyLog.content || anomalyLog.message}
+                      {/* {anomalyLog.content || anomalyLog.message} */}
+                      {selectedAnomaly?.toLowerCase().startsWith("zoo")
+                        ? `[${[anomalyLog.node, anomalyLog.component].filter(Boolean).join(":")}] - ${anomalyLog.content || anomalyLog.message}`
+                        : anomalyLog.content || anomalyLog.message}
                     </p>
                   </div>
                 </div>

@@ -286,7 +286,9 @@ return (
                 </p>
               </div>
  
-              <p style={{ fontSize: "11px" }}>{anomaly.content}</p>
+              <p style={{ fontSize: "11px" }}>{anomaly.anomalyId?.toLowerCase().startsWith("zoo")
+    ? `[${[anomaly.node, anomaly.component].filter(Boolean).join(":")}] - ${anomaly.content}`
+    : anomaly.content}</p>
  
               {/* Model availability indicators */}
               <div
