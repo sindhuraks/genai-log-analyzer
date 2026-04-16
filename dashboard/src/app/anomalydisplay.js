@@ -61,9 +61,12 @@ const AnomalyDisplay = ({ onSelect, selectedId, query }) => {
     const [anomalies, setAnomalies] = useState([]);
 
     const sortAnomalies = (data) => {
-        return data.sort((a, b) => {
-            return [...data].sort((a, b) => a.id - b.id);
-        });
+        // return data.sort((a, b) => {
+        //     return [...data].sort((a, b) => a.id - b.id);
+        // });
+        return [...data].sort((a, b) =>
+          a.anomalyId.localeCompare(b.anomalyId)
+        );
     };
 
     const [modelAvailability, setModelAvailability] = useState({});
@@ -287,10 +290,9 @@ return (
               </div>
  
               <p style={{ fontSize: "11px" }}>{anomaly.anomalyId?.toLowerCase().startsWith("zoo")
-    ? `[${[anomaly.node, anomaly.component].filter(Boolean).join(":")}] - ${anomaly.content}`
-    : anomaly.content}</p>
+                                              ? `[${[anomaly.node, anomaly.component].filter(Boolean).join(":")}] - ${anomaly.content}`
+                                              : anomaly.content}</p>
  
-              {/* Model availability indicators */}
               <div
                 style={{
                   display: "flex",
@@ -309,7 +311,6 @@ return (
                     />
                   ))
                 ) : (
-                  // Skeleton placeholders while loading
                   MODELS.map((model) => (
                     <span
                       key={model}

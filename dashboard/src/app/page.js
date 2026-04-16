@@ -108,6 +108,8 @@ export default function Home() {
   const [loadingEvaluation, setLoadingEvaluation] = useState(false);
   const [evaluationError, setEvaluationError] = useState(null);
   const [query, setQuery] = useState("");
+  const [recurrence, setRecurrence] = useState(null);
+  const [loadingRecurrence, setLoadingRecurrence] = useState(false);
 
   const handleAnomalySelect =  async(anomalyId) => {
     setSelectedAnomaly(anomalyId);
@@ -119,6 +121,8 @@ export default function Home() {
     setAnomalyLog(null);
     setEvaluation(null);        
     setEvaluationError(null);
+    setRecurrence(null);
+    setLoadingRecurrence(true);
 
     try {
       const response = await fetch(`http://localhost:8080/api/anomalies/${anomalyId}`, {
@@ -139,6 +143,27 @@ export default function Home() {
     } finally {
       setLoadingLog(false);
     }
+
+    try {
+      const recurRes = await fetch(`http://localhost:8080/api/anomalies/${anomalyId}/recurrence`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+      });
+      if(recurRes.ok) {
+        const data = await recurRes.json();
+        console.log(data);
+        setRecurrence(data);
+      } else {
+        throw new Error(`Error ${res.status}`);
+      }
+    } catch (err) {
+      console.error("Recurrence fetch failed", err);
+    } finally {
+      setLoadingRecurrence(false);
+    }
+
   }
 
   const handleAnalyzeAnomaly = async() => {
@@ -328,7 +353,7 @@ export default function Home() {
             </div>
           </div>
           <div className={styles.rightSection}>
-             <div className={styles.anomalyTopbar}>
+            <div className={styles.anomalyTopbar}>
               <h5 className={styles.sectionTxt}>{selectedAnomaly ? "Selected anomaly : " + selectedAnomaly : "Select an anomaly"}</h5>
               {/* <p style={{color: anomalyLog?.level?.toUpperCase() === "ERROR" ? "#E24B4A" : "#f0a500"}}> • {anomalyLog.level.toUpperCase()}</p> */}
               <div className={styles.btnGrp}>
@@ -341,6 +366,26 @@ export default function Home() {
                   Run Eval
                 </button> 
               </div>
+            </div>
+            <div className={styles.recurPlaceholder}>
+              {loadingRecurrence ? (
+                <p className={styles.logPlaceholderTxt}>Checking recurrence...</p>
+              ) : recurrence ? (
+                <>
+                  <p className={styles.logContent}>
+                    <span className={styles.logPlaceholderTxt}>Recurrence Info:</span> <br></br><br></br>
+                    <strong>Status:</strong>{" "}
+                    {recurrence.recurrent ? "Recurrent 🔄" : "New ✅"}
+                  </p>
+                  <p className={styles.logContent}>
+                    <strong>First Seen:</strong> {recurrence.firstSeen}
+                  </p>
+                </>
+              ) : (
+                <p className={styles.logPlaceholderTxt}>
+                  Recurrence data not available
+                </p>
+              )}
             </div>
             <div className={styles.anomalyMidbar}>
                 <h5 className={styles.midsectionTxt}>MODEL</h5>

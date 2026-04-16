@@ -613,3 +613,12 @@
   font-family: "JetBrains Mono", monospace;
   opacity: 0.85;
 }
+
+.recurPlaceholder {
+  border: 1px solid rgba(77, 250, 204, 0.2);
+  border-radius: 6px;
+  padding: 10px 16px;
+  background: rgba(77, 250, 204, 0.08);
+  margin: 10px 25px;
+  text-align: left;
+}
