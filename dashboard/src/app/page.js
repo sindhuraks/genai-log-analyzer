@@ -91,6 +91,19 @@ function formatDateTime(date, time) {
   }
 }
 
+function formatFirstSeen(firstSeen) {
+  if (!firstSeen) return "";
+  const s = firstSeen.trim();
+
+  const hdfsMatch = s.match(/^(\d{6})\s+(\d{6})$/);
+  if (hdfsMatch) return formatDateTime(hdfsMatch[1], hdfsMatch[2]);
+
+  const zkMatch = s.match(/^(\d{4}-\d{2}-\d{2})\s+"?(\d{2}:\d{2}:\d{2}(?:,\d+)?)"?$/);
+  if (zkMatch) return formatDateTime(zkMatch[1], zkMatch[2]);
+
+  return formatDateTime(null, s);
+}
+
 export default function Home() {
 
   const [activeModel, setActiveModel] = useState("claude 3 haiku");
@@ -378,7 +391,7 @@ export default function Home() {
                     {recurrence.recurrent ? "Recurrent 🔄" : "New ✅"}
                   </p>
                   <p className={styles.logContent}>
-                    <strong>First Seen:</strong> {recurrence.firstSeen}
+                    <strong>First Seen:</strong> {formatFirstSeen(recurrence.firstSeen)}
                   </p>
                 </>
               ) : (
