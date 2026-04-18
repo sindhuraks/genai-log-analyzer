@@ -40,10 +40,11 @@ public class AnomalyExplanationService {
         return """
                 You are a SRE assistant.
                 Analyze the following system log anomaly and explain:
-                1. What the error means?
+                1. What the message means?
                 2. Root cause:
                 3. Suggested mitigation to avoid the problem:
-                               
+                The message may represent a warning, non fatal error, or fatal error.
+                 
                 Log anomaly:\n %s
                                
                 After analyzing the anomaly, on a new line output the following:
