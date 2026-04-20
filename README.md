@@ -30,4 +30,4 @@ Steps to get the development environment running:
 - Setup the necessary PostgreSQL configuration and api keys.
 
 ## Demo
-<video controls src="dem.mov" title="Title"></video> [text](README.md)
+<video controls src="dem.mp4" title="Title"></video>
